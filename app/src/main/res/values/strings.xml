@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Identity</string>
+    <string name="empid">Employee ID</string>
+    <string name="empid_sub">Enter your Employee ID</string>
+    <string name="ip">IP Address</string>
+    <string name="ip_sub">Enter the IP Address</string>
+    <string name="blank_ip">http://192.168.0.0:5000</string>
+</resources>
