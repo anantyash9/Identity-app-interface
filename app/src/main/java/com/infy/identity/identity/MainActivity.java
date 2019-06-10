@@ -19,13 +19,24 @@ package com.infy.identity.identity;
         import android.widget.ImageView;
         import android.widget.TextView;
 
+        import com.android.volley.Request;
+        import com.android.volley.RequestQueue;
+        import com.android.volley.Response;
+        import com.android.volley.VolleyError;
+        import com.android.volley.toolbox.StringRequest;
+        import com.android.volley.toolbox.Volley;
         import com.google.zxing.BarcodeFormat;
         import com.google.zxing.ResultPoint;
         import com.google.zxing.client.android.BeepManager;
+        import com.google.zxing.client.result.ParsedResult;
+        import com.google.zxing.client.result.ResultParser;
         import com.journeyapps.barcodescanner.BarcodeCallback;
         import com.journeyapps.barcodescanner.BarcodeResult;
         import com.journeyapps.barcodescanner.DecoratedBarcodeView;
         import com.journeyapps.barcodescanner.DefaultDecoderFactory;
+
+        import org.json.JSONException;
+        import org.json.JSONObject;
 
         import java.util.Arrays;
         import java.util.Collection;
@@ -35,6 +46,7 @@ package com.infy.identity.identity;
  * This sample performs continuous scanning, displaying the barcode and source image whenever
  * a barcode is scanned.
  */
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private DecoratedBarcodeView barcodeView;
@@ -42,10 +54,65 @@ public class MainActivity extends AppCompatActivity {
     private String lastText;
     private String ip;
     private String employeeId;
+    RequestQueue queue ;
 
     private BarcodeCallback callback = new BarcodeCallback() {
         @Override
         public void barcodeResult(BarcodeResult result) {
+            try {
+                JSONObject temp = new JSONObject(result.getText());
+                String type = temp.getString("type");
+
+                String direction;
+                if (type.equalsIgnoreCase("ENTRY"))
+                {
+                    direction="BUILDING_IN";
+                }
+                else
+                {
+                    direction="BUILDING_OUT";
+                }
+                String url =ip+"/alternate/"+employeeId+"/"+direction+"/demo_turnstile_0001";
+                Log.v("dectection",url);
+                // Request a string response from the provided URL.
+                StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                        new Response.Listener<String>() {
+                            @Override
+                            public void onResponse(String response) {
+                                barcodeView.resume();
+                                JSONObject tem = null;
+                                try {
+                                    tem = new JSONObject(response);
+                                    String result = tem.getString("result");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+
+                                // Display the first 500 characters of the response str
+                            }
+                        }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        //d
+                    }
+                });
+
+// Add the request to the RequestQueue.
+                Log.v("dectection",String.valueOf(queue.getSequenceNumber()));
+
+                queue.add(stringRequest);
+                pause(barcodeView);
+
+
+
+
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+
             //hit the url from here
         }
 
@@ -81,12 +148,12 @@ public class MainActivity extends AppCompatActivity {
         getSavedValues();
         TextView textView = (TextView) findViewById(R.id.textView);
         textView.setText(employeeId);
+        queue = Volley.newRequestQueue(this);
         barcodeView = (DecoratedBarcodeView) findViewById(R.id.barcode_scanner);
         Collection<BarcodeFormat> formats = Arrays.asList(BarcodeFormat.QR_CODE, BarcodeFormat.CODE_39);
         barcodeView.getBarcodeView().setDecoderFactory(new DefaultDecoderFactory(formats));
         barcodeView.initializeFromIntent(getIntent());
         barcodeView.decodeContinuous(callback);
-
         beepManager = new BeepManager(this);
     }
     @Override
